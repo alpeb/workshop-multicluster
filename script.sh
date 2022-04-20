@@ -47,7 +47,9 @@ k -n emojivoto label svc web-svc mirror.linkerd.io/exported=true
 # Create link
 linkerd mc link --cluster-name east > link.yml
 vim link.yml
-k -n linkerd-multicluster get secret linkerd-service-mirror-remote-access-default-token-p4s4b -ojson | jq .data.token | tr -d '"' | base64 -d
+# Check the token used for connecting to east's kube-api service
+k -n linkerd-multicluster get secret
+# we can also use this to add more service accounts
 linkerd mc allow
 
 # In west
@@ -55,6 +57,9 @@ linkerd mc allow
 k config use-context west
 # Apply link and check multicluster connection, new service and endpoint
 k apply -f link.yml
+# Check the cluster-credentials-east secret
+k -n linkerd-multicluster get secret cluster-credentials-east -ojson | jq .data.kubeconfig | tr -d '"' | base64 -d
+# Check the connection between clusters was established
 linkerd mc gateways
 k -n emojivoto get svc
 k -n emojivoto get ep
@@ -68,7 +73,7 @@ k create deployment curl --image curlimages/curl
 k edit deploy curl
 # Attempt connecting to the gateway from outside the mesh
 k exec -ti curl-8468dbf5fd-tp4wj sh
-curl http://web-svc-east.emojivoto.svc.cluster.local
+curl http://web-svc-east.emojivoto
 # In a separate window, check the connection denial on east
 k --context east -n linkerd-multicluster logs -f linkerd-gateway-6c4658f9d8-5fjm8 linkerd-proxy
 # Inject curl and try again
@@ -83,7 +88,7 @@ k -n emojivoto logs -f vote-bot-xxx vote-bot
 ## Failover ##
 ##############
 
-# Reinstall emojivoto, with only vote-bot and web
+# Reinstall emojivoto
 linkerd inject https://run.linkerd.io/emojivoto.yml | k apply -f -
 # Install the linkerd-smi extension
 helm repo add linkerd-smi https://linkerd.github.io/linkerd-smi
@@ -110,10 +115,3 @@ k -n emojivoto get ts web-svc -oyaml
 k -n emojivoto scale --replicas 1 deploy web
 # Check changes on the traffic-split
 k -n emojivoto get ts web-svc -oyaml
-# Scale down web-svc on west
-k -n emojivoto scale --replicas 0 deploy web
-# Switch roles of primary and secondary services
-k -n emojivoto edit ts web-svc
-# Watch multicluster connection while removing link
-watch linkerd mc gateways
-linkerd mc unlink --cluster-name east
