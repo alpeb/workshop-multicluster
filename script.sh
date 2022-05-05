@@ -69,11 +69,11 @@ k -n emojivoto logs -f vote-bot-xxx vote-bot
 k create deployment curl --image curlimages/curl
 # Add this for the pod to continue running:
 # command: [ "/bin/sh", "-c", "--" ]
-# args: [ "while true; do sleep 30; done;" ]
+# args: [ "sleep infinity" ]
 k edit deploy curl
 # Attempt connecting to the gateway from outside the mesh
 k exec -ti curl-8468dbf5fd-tp4wj sh
-curl http://web-svc-east.emojivoto
+curl http://web-svc-east.emojivoto.svc.cluster.local
 # In a separate window, check the connection denial on east
 k --context east -n linkerd-multicluster logs -f linkerd-gateway-6c4658f9d8-5fjm8 linkerd-proxy
 # Inject curl and try again
@@ -90,7 +90,7 @@ k -n emojivoto logs -f vote-bot-xxx vote-bot
 
 # Reinstall emojivoto
 linkerd inject https://run.linkerd.io/emojivoto.yml | k apply -f -
-# Install the linkerd-smi extension
+# Install the linkerd-smi extension (ONLY REQUIRED IF RUNNING 2.12!)
 helm repo add linkerd-smi https://linkerd.github.io/linkerd-smi
 helm repo up
 helm install linkerd-smi -n linkerd-smi --create-namespace linkerd-smi/linkerd-smi
