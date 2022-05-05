@@ -1,3 +1,4 @@
 # Workshop: Secure Multi-cluster Kubernetes with Linkerd
 
-Demo script: [`script.sh`](script.sh)
+This has been moved to the
+[service-mesh-academy](https://github.com/BuoyantIO/service-mesh-academy) repo.
